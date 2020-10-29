@@ -1,9 +1,12 @@
 const ico = artifacts.require("ICO");
 const usdt = artifacts.require("USDT");
+const SIP = artifacts.require("SIPDapp")
 const Web3 = require('web3');
+const BN = require("bn.js")
 const truffleAssert = require('truffle-assertions');
 const fs = require('fs');
 var truffleContract = require('@truffle/contract');
+// const { assert } = require('console');
 
 const provider = new Web3.providers.HttpProvider("http://127.0.0.1:8545");
 
@@ -22,10 +25,15 @@ erc20ABI = JSON.parse(erc20ABI);
 
 contract("UNISWAP Router test cases", function() {
 
+  let accounts = null;
+
   let icotoken = null;
   let usdttoken = null;
+
   let icoadd = null;
   let usdtadd = null;
+  let sip = null;
+
   let router = null;
   let factory = null;
   let routerAdd = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D';
@@ -44,6 +52,7 @@ contract("UNISWAP Router test cases", function() {
 
 
   before(async function(){
+    accounts = await web3.eth.getAccounts();
     
      icotoken = await ico.deployed();
      usdttoken = await usdt.deployed();
@@ -51,6 +60,14 @@ contract("UNISWAP Router test cases", function() {
      factoryInstance = await factory.at(factoryADD);
      usdtadd = usdttoken.address;
      icoadd = icotoken.address;
+     sip = await SIP.deployed()
+
+     const largeAmt = "999999999999999999999999999999999999999999"
+
+    //  Allow SIP to take user funds
+    await usdttoken.approve(sip.address, largeAmt, {from: accounts[1]})
+    await usdttoken.approve(sip.address, largeAmt, { from: accounts[2] })
+    await usdttoken.approve(sip.address, largeAmt, { from: accounts[3] })
 
   });
   
@@ -141,5 +158,32 @@ contract("UNISWAP Router test cases", function() {
     
 
   });
+
+  it("should be able to deposit tokens", async () => {
+    let depositAmt = new BN(String(100 * usdtFactor))
+    await usdttoken.transfer(accounts[1], depositAmt, {from: accounts[0]})
+    let oldBal = await sip.tokens.call(usdtadd, accounts[1])
+    await sip.depositToken(usdtadd, depositAmt, {from: accounts[1]})
+    let newBal = await sip.tokens.call(usdtadd, accounts[1])
+    console.log({oldBal: oldBal.toString(), newBal: newBal.toString()});
+    assert.equal((oldBal.add(depositAmt)).toString(), newBal.toString(), "Balance add issue")
+  })
+
+  it("should be able to withdraw tokens", async () => {
+    let withdrawAmt = new BN(String(49 * usdtFactor))
+    let tx1,tx2;
+
+    tx1 = await sip.withdrawToken(usdtadd, withdrawAmt, {from: accounts[1]})
+    tx2 = await sip.withdrawTokenOpti(usdtadd, withdrawAmt, {from: accounts[1]})
+    console.log("OPTIMISATION",{
+      withdrawToken:tx1.receipt.gasUsed, 
+      withdrawTokenOpti: tx2.receipt.gasUsed
+    });
+    
+  })
+  it("should not be able to subscribe as initFees is not set", async ()=> {
+    
+  })
+
 
 });
