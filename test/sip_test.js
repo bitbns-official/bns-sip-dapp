@@ -9,6 +9,7 @@ const fs = require('fs');
 var truffleContract = require('@truffle/contract');
 // const { assert } = require('console');
 // const { assert } = require('console');
+console.log((new BN("8").mul(new BN(String(1e18)))).toString());
 
 
 const provider = new Web3.providers.HttpProvider("http://127.0.0.1:8545");
@@ -93,6 +94,25 @@ contract("UNISWAP Router test cases", function() {
     await wethtoken.approve(sip.address, largeAmt, {from: accounts[1]})
     await wethtoken.approve(sip.address, largeAmt, { from: accounts[2] })
     await wethtoken.approve(sip.address, largeAmt, { from: accounts[3] })
+
+    // All Accounts approval to WETH pull by SIP
+    let approvals = []
+    for(let i=1;i<=9;i+=1){
+      approvals.push(wethtoken.approve(sip.address, largeAmt, { from: accounts[i] }))
+      approvals.push(usdttoken.approve(sip.address, largeAmt, {from: accounts[i]}))
+    }
+    
+    // Send WETH/USDT to all accounts
+    let transfers = []
+    for (let i = 1; i <= 9; i += 1) {
+      transfers.push(wethtoken.transfer(accounts[i], String(100 * wethFactor), { from: accounts[0] }))
+      transfers.push(usdttoken.transfer(accounts[i], String(10000000 * usdtFactor), { from: accounts[0] }))
+    }
+    // await Promise.all(transfers)
+    await Promise.all([...approvals, ...transfers])
+    console.log("Approval given to SIP to take USDT/WETH from all accounts");
+    console.log("USDT/WETH transfers done to all accounts");
+
     //setting address for sip contract
     let feeaccount=accounts[5];
     await sip.setAddresses(feeaccount,routerAdd,factoryADD,icoadd,wethadd);
@@ -305,6 +325,19 @@ contract("UNISWAP Router test cases", function() {
   })
 
   it("should be able to charge 150 SIPs with some random ones closed", async () => {
+
+    // Start 150 SIPs
+    for(let i=1;i<=9;i+=1){ // for accounts
+      // WETH for fees
+      await sip.depositToken(wethadd, new BN("8").mul(new BN(String(wethFactor))), { from: accounts[i] });
+
+      for(let j=1;j<=15;j+=1){
+        let sipAmt = new BN(j.toString());
+        // Start SIP
+        await sip.subscribeToSppOpti(sipAmt, "3600", icoadd, usdtadd, { from: accounts[i] });
+
+      }
+    }
 
   })
 
