@@ -173,15 +173,15 @@ contract SIP {
 
     function withdrawTokenOpti(address token, uint256 amount) external {
         require(token != address(0), "IT");
-        uint tokenAmt = tokens[token][msg.sender];
-        require(tokenAmt >= amount, "IB");
-        require(Token(token).transfer(msg.sender, amount), "WF");
-        tokenAmt = SafeMath.sub(
-            tokenAmt,
+        uint _tokenAmt = tokens[token][msg.sender];
+       
+        _tokenAmt = SafeMath.sub(
+            _tokenAmt,
             amount
         );
-        tokens[token][msg.sender] = tokenAmt;
-        emit Withdraw(token, msg.sender, amount, tokenAmt);
+        tokens[token][msg.sender] = _tokenAmt;
+        require(Token(token).transfer(msg.sender, amount), "WF");
+        emit Withdraw(token, msg.sender, amount, _tokenAmt);
     }
 
     function tokenBalanceOf(address token, address user) public view returns (uint256 balance) {
@@ -200,10 +200,10 @@ contract SIP {
         require(period >= minPeriod, "MIN_FREQUENCY");
         require(period.mod(3600) == 0, "INTEGRAL_MULTIPLE_OF_HOUR_NEEDED");
         require(tokenBalanceOf(tokenGive,customerAddress) >= value, "INSUFFICENT_BALANCE");
-        require(initFee!=0,"INITFEES SHOULD BE CALLED");
+             
             _deductFee(customerAddress, WETH, initFee);
             sppID += 1;
-            
+           
             require(tokenGet != tokenGive, 'IDENTICAL_ADDRESSES');
             (address token0, address token1) = tokenGet < tokenGive ? (tokenGet, tokenGive) : (tokenGive, tokenGet);
             require(token0 != address(0), 'ZERO_ADDRESS');
@@ -255,9 +255,10 @@ contract SIP {
         require(period >= minPeriod, "MIN_FREQUENCY");
         require(period.mod(3600) == 0, "INTEGRAL_MULTIPLE_OF_HOUR_NEEDED");
         require(tokenBalanceOf(tokenGive,customerAddress) >= value, "INSUFFICENT_BALANCE");
-        require(initFee!=0,"INITFEES SHOULD BE CALLED");
+
         
             _deductFee(customerAddress, WETH, initFee);
+    
             sppID += 1;
             
             require(tokenGet != tokenGive, 'IDENTICAL_ADDRESSES');
