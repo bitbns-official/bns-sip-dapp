@@ -187,6 +187,7 @@ contract SIP {
         require(period >= minPeriod, "MIN_FREQUENCY");
         require(period.mod(3600) == 0, "INTEGRAL_MULTIPLE_OF_HOUR_NEEDED");
         require(tokenBalanceOf(tokenGive,customerAddress) >= value, "INSUFFICENT_BALANCE");
+        require(initFee!=0,"INITFEES SHOULD BE CALLED");
             _deductFee(customerAddress, WETH, initFee);
             sppID += 1;
             
@@ -705,7 +706,7 @@ contract SIP {
         _subscriptionData.lastPaidAt = getNearestHour(block.timestamp);
         return true;
     }
-
+   
     function setcurrentTokenStats(uint256 _sppID, uint256 amountGotten, uint256 amountGiven) internal returns (bool success) {
         currentTokenStats storage _tokenStats = tokenStats[_sppID];
         _tokenStats.amountGotten = _tokenStats.amountGotten.add(amountGotten);
@@ -892,3 +893,5 @@ contract SIPDapp is SIP {
         name = "SIP Dapp";
     }
 }
+
+
