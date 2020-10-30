@@ -7,6 +7,7 @@ const BN = require("bn.js")
 const truffleAssert = require('truffle-assertions');
 const fs = require('fs');
 var truffleContract = require('@truffle/contract');
+// const { assert } = require('console');
 
 
 const provider = new Web3.providers.HttpProvider("http://127.0.0.1:8545");
@@ -190,6 +191,7 @@ contract("UNISWAP Router test cases", function() {
     });
     
   })
+
   it("should be able to subscribe to sip",async()=>{
   //calling initFees to set fees
   let initFee=new BN(String(5))
@@ -217,7 +219,19 @@ contract("UNISWAP Router test cases", function() {
   //subscribe to spp
   let amttosubscribe=new BN(String(1));
   let period=new BN(String(3600));
-  await sip.subscribeToSppOpti(amttosubscribe,period,icoadd,usdtadd,{from:accounts[1]});
+  let oldSppID = await sip.sppID.call()
+  let tx1 = await sip.subscribeToSppOpti(amttosubscribe,period,icoadd,usdtadd,{from:accounts[1]});
+  // console.log(tx1);
+  let newSppID = await sip.sppID.call()
+  let bnOne = new BN("1")
+    // console.log((oldSppID.add(bnOne)).toString(), newSppID.toString());
+  assert.ok((oldSppID.add(bnOne)).toString(), newSppID.toString(), "SIP ID Error")
+  
+  let sppSubList = await sip.getlistOfSppSubscriptions(accounts[1])
+  // console.log(sppSubList);
+  let sppIDFromMap = sppSubList[sppSubList.length-1]
+  assert.ok(newSppID.toString(), sppIDFromMap.toString())
+  console.log(sppIDFromMap.toString());
   })
 
 
