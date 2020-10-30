@@ -217,7 +217,9 @@ contract("UNISWAP Router test cases", function() {
   //subscribe to spp
   let amttosubscribe=new BN(String(1));
   let period=new BN(String(3600));
-  await sip.subscribeToSppOpti(amttosubscribe,period,icoadd,usdtadd,{from:accounts[1]});
+  let tx=await sip.subscribeToSpp(amttosubscribe,period,icoadd,usdtadd,{from:accounts[1]});
+  
+  
   })
 
 
