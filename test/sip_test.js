@@ -1,12 +1,13 @@
 const ico = artifacts.require("ICO");
 const usdt = artifacts.require("USDT");
 const SIP = artifacts.require("SIPDapp")
+const weth=artifacts.require("WETH");
 const Web3 = require('web3');
 const BN = require("bn.js")
 const truffleAssert = require('truffle-assertions');
 const fs = require('fs');
 var truffleContract = require('@truffle/contract');
-// const { assert } = require('console');
+
 
 const provider = new Web3.providers.HttpProvider("http://127.0.0.1:8545");
 
@@ -29,11 +30,12 @@ contract("UNISWAP Router test cases", function() {
 
   let icotoken = null;
   let usdttoken = null;
+  let wethtoken=null;
 
   let icoadd = null;
   let usdtadd = null;
   let sip = null;
-
+  let wethadd=null;
   let router = null;
   let factory = null;
   let routerAdd = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D';
@@ -43,25 +45,26 @@ contract("UNISWAP Router test cases", function() {
   router.setProvider(provider);
   factory = truffleContract({abi:factoryABI});
   factory.setProvider(provider);
-  
+
   let icoFactor = 1e9;
   let usdtFactor = 1e6;
-
+  let wethFactor=1e18;
   let routerInstance = null;
   let factoryInstance = null;
-
+  
 
   before(async function(){
     accounts = await web3.eth.getAccounts();
     
      icotoken = await ico.deployed();
      usdttoken = await usdt.deployed();
+     wethtoken=await weth.deployed();
      routerInstance = await router.at(routerAdd);
      factoryInstance = await factory.at(factoryADD);
      usdtadd = usdttoken.address;
      icoadd = icotoken.address;
+     wethadd= wethtoken.address;
      sip = await SIP.deployed()
-
      const largeAmt = "999999999999999999999999999999999999999999"
 
     //  Allow SIP to take user funds
@@ -69,6 +72,12 @@ contract("UNISWAP Router test cases", function() {
     await usdttoken.approve(sip.address, largeAmt, { from: accounts[2] })
     await usdttoken.approve(sip.address, largeAmt, { from: accounts[3] })
 
+    await wethtoken.approve(sip.address, largeAmt, {from: accounts[1]})
+    await wethtoken.approve(sip.address, largeAmt, { from: accounts[2] })
+    await wethtoken.approve(sip.address, largeAmt, { from: accounts[3] })
+    //setting address for sip contract
+    let feeaccount=accounts[5];
+    await sip.setAddresses(feeaccount,routerAdd,factoryADD,icoadd,wethadd);
   });
   
   it("should be able to verify WETH and Factor address", async function() {
@@ -181,8 +190,34 @@ contract("UNISWAP Router test cases", function() {
     });
     
   })
-  it("should not be able to subscribe as initFees is not set", async ()=> {
-    
+  it("should be able to subscribe to sip",async()=>{
+  //calling initFees to set fees
+  let initFee=new BN(String(5))
+  await sip.setInitFee(initFee);
+  //checking initfees is set.
+  let initFeeAfter=await sip.initFee.call()
+  console.log(initFeeAfter.toString())
+  assert.equal(initFeeAfter.toString(),initFee.toString(),"Problem with SetInitFee");
+  let beforeethbalance=await wethtoken.balanceOf(accounts[1]);
+  //transfering weth to account1
+  let amteth=new BN(String(100000000000000000000));
+  
+  let tx=await wethtoken.transfer(accounts[1],amteth,{from:accounts[0]})
+  
+  let afterethbalance=await wethtoken.balanceOf(accounts[1]);
+  
+  console.log({
+    "BEFORE":beforeethbalance.toString(),
+    "AFTER":afterethbalance.toString()
+  })
+  //deposit token
+  await sip.depositToken(wethadd,afterethbalance,{from:accounts[1]});
+  afterethbalance=await wethtoken.balanceOf(accounts[1]);
+  console.log("BALANCE:",afterethbalance.toString())
+  //subscribe to spp
+  let amttosubscribe=new BN(String(1));
+  let period=new BN(String(3600));
+  await sip.subscribeToSppOpti(amttosubscribe,period,icoadd,usdtadd,{from:accounts[1]});
   })
 
 
