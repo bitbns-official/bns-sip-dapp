@@ -8,6 +8,7 @@ const truffleAssert = require('truffle-assertions');
 const fs = require('fs');
 var truffleContract = require('@truffle/contract');
 // const { assert } = require('console');
+// const { assert } = require('console');
 
 
 const provider = new Web3.providers.HttpProvider("http://127.0.0.1:8545");
@@ -23,6 +24,22 @@ pairABI = JSON.parse(pairABI);
 
 let erc20ABI = fs.readFileSync('../abi/erc20.abi').toString();
 erc20ABI = JSON.parse(erc20ABI);
+
+const advancetime = (time) => {
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send({
+      jsonrpc: '2.0',
+      method: 'evm_increaseTime',
+      id: new Date().getTime(),
+      params: [time]
+    }, async (err, result) => {
+      if (err) { return reject(err) }
+      const newBlockHash = await web3.eth.getBlock('latest').hash
+
+      return resolve(newBlockHash)
+    })
+  })
+}
 
 
 contract("UNISWAP Router test cases", function() {
@@ -189,6 +206,7 @@ contract("UNISWAP Router test cases", function() {
       withdrawToken:tx1.receipt.gasUsed, 
       withdrawTokenOpti: tx2.receipt.gasUsed
     });
+    // TODO: Add asserts here
     
   })
 
@@ -234,5 +252,60 @@ contract("UNISWAP Router test cases", function() {
   console.log(sppIDFromMap.toString());
   })
 
+  it("should be able to charge SIP -  single user", async() => {
+    let sppIDs = await sip.sppID.call()
+    const pairMap = {
+
+    }
+    for(let i=1;i<=sppIDs; i+=1) {
+      let data = await sip.fetchPairAndDirection(i)
+      console.log(data);
+      if(pairMap[data.pair] === undefined){
+        pairMap[data.pair] = {
+          0: [],
+          1: []
+        }
+      }
+      pairMap[data.pair][(data.direction === true) ? "1" : "0"].push(i)
+    }
+
+    console.log(pairMap);
+
+    const contractWalletBalUsdtOld = await sip.tokens.call(usdtadd, accounts[1])
+    const sppStats = await sip.sppSubscriptionStats.call(sppIDs)
+    const deductAmt = sppStats.value
+
+    for(let pair of Object.keys(pairMap)){
+      // Call for true direction
+      if(pairMap[pair]["1"].length !== 0){
+        console.log(pair, true);
+        await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["1"]), true)
+      }
+
+      // Call for false direction
+      if (pairMap[pair]["0"].length !== 0) {
+        console.log(pair, false);
+        await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["0"]), false)
+      }
+    }
+
+    const contractWalletBalUsdtNew = await sip.tokens.call(usdtadd, accounts[1])
+    console.log({
+      contractWalletBalUsdtOld: contractWalletBalUsdtOld.toString(),
+      contractWalletBalUsdtNew: contractWalletBalUsdtNew.toString(),
+      deductAmt: deductAmt.toString()
+    });
+    assert.ok((contractWalletBalUsdtOld.sub(deductAmt)).toString() , contractWalletBalUsdtNew.toString())
+
+
+  })
+
+  it("should charge fees in proportion", async () => {
+
+  })
+
+  it("should be able to charge 150 SIPs with some random ones closed", async () => {
+
+  })
 
 });
