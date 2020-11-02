@@ -9,6 +9,7 @@ const fs = require('fs');
 var truffleContract = require('@truffle/contract');
 // const { assert } = require('console');
 // const { assert } = require('console');
+// const { assert } = require('console');
 console.log((new BN("8").mul(new BN(String(1e18)))).toString());
 
 
@@ -118,17 +119,17 @@ contract("UNISWAP Router test cases", function() {
     await sip.setAddresses(feeaccount,routerAdd,factoryADD,icoadd,wethadd);
   });
   
-  it("should be able to verify WETH and Factor address", async function() {
+  // it("should be able to verify WETH and Factor address", async function() {
 
 
-    var wethFound = await routerInstance.WETH.call();
-    assert.equal(wethFound.toLowerCase(), wethADD.toLowerCase(), 'Incorrect WETH address found');
+  //   var wethFound = await routerInstance.WETH.call();
+  //   assert.equal(wethFound.toLowerCase(), wethADD.toLowerCase(), 'Incorrect WETH address found');
 
-    var factoryFound = await routerInstance.factory.call();
-    assert.equal(factoryFound.toLowerCase(), factoryADD.toLowerCase(), 'Incorrect Factory address found');
+  //   var factoryFound = await routerInstance.factory.call();
+  //   assert.equal(factoryFound.toLowerCase(), factoryADD.toLowerCase(), 'Incorrect Factory address found');
 
 
-  });
+  // });
 
   it("should be able to create pair", async function() {
 
@@ -185,227 +186,262 @@ contract("UNISWAP Router test cases", function() {
 
   });
 
-  it("should be able to swap tokens", async function() {
+  // it("should be able to swap tokens", async function() {
 
-    var accounts = await web3.eth.getAccounts();
-    // Sell 5 ICO tokens for USDT
-    let amt = 5 * icoFactor;
+  //   var accounts = await web3.eth.getAccounts();
+  //   // Sell 5 ICO tokens for USDT
+  //   let amt = 5 * icoFactor;
 
-    let expiry_time = parseInt((new Date().getTime()/1000) + 5000);
+  //   let expiry_time = parseInt((new Date().getTime()/1000) + 5000);
 
-    let preResults = await routerInstance.getAmountsOut.call(amt, [icoadd, usdtadd]);
+  //   let preResults = await routerInstance.getAmountsOut.call(amt, [icoadd, usdtadd]);
 
-    let balBefore = parseInt(await usdttoken.balanceOf.call(accounts[1]));
+  //   let balBefore = parseInt(await usdttoken.balanceOf.call(accounts[1]));
 
-    await routerInstance.swapExactTokensForTokens(amt, (preResults[1]), [icoadd, usdtadd], accounts[1], expiry_time, {from : accounts[0]});
+  //   await routerInstance.swapExactTokensForTokens(amt, (preResults[1]), [icoadd, usdtadd], accounts[1], expiry_time, {from : accounts[0]});
 
-    let balAfter = parseInt(await usdttoken.balanceOf.call(accounts[1]));
+  //   let balAfter = parseInt(await usdttoken.balanceOf.call(accounts[1]));
 
-    assert.equal((balAfter - balBefore), preResults[1], 'Incorrect swap amount');
+  //   assert.equal((balAfter - balBefore), preResults[1], 'Incorrect swap amount');
     
 
-  });
+  // });
 
-  it("should be able to deposit tokens", async () => {
-    let depositAmt = new BN(String(100 * usdtFactor))
-    await usdttoken.transfer(accounts[1], depositAmt, {from: accounts[0]})
-    let oldBal = await sip.tokens.call(usdtadd, accounts[1])
-    await sip.depositToken(usdtadd, depositAmt, {from: accounts[1]})
-    let newBal = await sip.tokens.call(usdtadd, accounts[1])
-    console.log({oldBal: oldBal.toString(), newBal: newBal.toString()});
-    assert.equal((oldBal.add(depositAmt)).toString(), newBal.toString(), "Balance add issue")
-  })
+  // it("should be able to deposit tokens", async () => {
+  //   let depositAmt = new BN(String(100 * usdtFactor))
+  //   await usdttoken.transfer(accounts[1], depositAmt, {from: accounts[0]})
+  //   let oldBal = await sip.tokens.call(usdtadd, accounts[1])
+  //   await sip.depositToken(usdtadd, depositAmt, {from: accounts[1]})
+  //   let newBal = await sip.tokens.call(usdtadd, accounts[1])
+  //   // console.log({oldBal: oldBal.toString(), newBal: newBal.toString()});
+  //   assert.equal((oldBal.add(depositAmt)).toString(), newBal.toString(), "Balance add issue")
+  // })
 
-  it("should be able to withdraw tokens", async () => {
-    let withdrawAmt = new BN(String(49 * usdtFactor))
-    let tx1,tx2;
+  // it("should be able to withdraw tokens", async () => {
+  //   let withdrawAmt = new BN(String(49 * usdtFactor))
+  //   let tx1,tx2;
 
-    tx1 = await sip.withdrawToken(usdtadd, withdrawAmt, {from: accounts[1]})
-    tx2 = await sip.withdrawTokenOpti(usdtadd, withdrawAmt, {from: accounts[1]})
-    console.log("OPTIMISATION",{
-      withdrawToken:tx1.receipt.gasUsed, 
-      withdrawTokenOpti: tx2.receipt.gasUsed
-    });
-    // TODO: Add asserts here
+  //   tx1 = await sip.withdrawToken(usdtadd, withdrawAmt, {from: accounts[1]})
+  //   tx2 = await sip.withdrawTokenOpti(usdtadd, withdrawAmt, {from: accounts[1]})
+  //   console.log("OPTIMISATION",{
+  //     withdrawToken:tx1.receipt.gasUsed, 
+  //     withdrawTokenOpti: tx2.receipt.gasUsed
+  //   });
+  //   // TODO: Add asserts here
     
-  })
+  // })
 
-  it("should be able to subscribe to sip",async()=>{
-  //calling initFees to set fees
-  let initFee=new BN(String(5))
-  await sip.setInitFee(initFee);
-  //checking initfees is set.
-  let initFeeAfter=await sip.initFee.call()
-  console.log(initFeeAfter.toString())
-  assert.equal(initFeeAfter.toString(),initFee.toString(),"Problem with SetInitFee");
-  let beforeethbalance=await wethtoken.balanceOf(accounts[1]);
-  //transfering weth to account1
-  let amteth=new BN(String(100000000000000000000));
+  // it("should be able to subscribe to sip",async()=>{
+  // //calling initFees to set fees
+  // let initFee=new BN(String(5))
+  // await sip.setInitFee(initFee);
+  // //checking initfees is set.
+  // let initFeeAfter=await sip.initFee.call()
+  // console.log(initFeeAfter.toString())
+  // assert.equal(initFeeAfter.toString(),initFee.toString(),"Problem with SetInitFee");
+  // let beforeethbalance=await wethtoken.balanceOf(accounts[1]);
+  // //transfering weth to account1
+  // let amteth=new BN(String(100000000000000000000));
   
-  let tx=await wethtoken.transfer(accounts[1],amteth,{from:accounts[0]})
+  // let tx=await wethtoken.transfer(accounts[1],amteth,{from:accounts[0]})
   
-  let afterethbalance=await wethtoken.balanceOf(accounts[1]);
+  // let afterethbalance=await wethtoken.balanceOf(accounts[1]);
   
-  console.log({
-    "BEFORE":beforeethbalance.toString(),
-    "AFTER":afterethbalance.toString()
-  })
-  //deposit token
-  await sip.depositToken(wethadd,afterethbalance,{from:accounts[1]});
-  afterethbalance=await wethtoken.balanceOf(accounts[1]);
-  console.log("BALANCE:",afterethbalance.toString())
-  //subscribe to spp
-  let amttosubscribe=new BN(String(1));
-  let period=new BN(String(3600));
-  let oldSppID = await sip.sppID.call()
-  let tx1 = await sip.subscribeToSppOpti(amttosubscribe,period,icoadd,usdtadd,{from:accounts[1]});
-  // console.log(tx1);
-  let newSppID = await sip.sppID.call()
-  let bnOne = new BN("1")
-    // console.log((oldSppID.add(bnOne)).toString(), newSppID.toString());
-  assert.ok((oldSppID.add(bnOne)).toString(), newSppID.toString(), "SIP ID Error")
+  // console.log({
+  //   "BEFORE":beforeethbalance.toString(),
+  //   "AFTER":afterethbalance.toString()
+  // })
+  // //deposit token
+  // await sip.depositToken(wethadd,afterethbalance,{from:accounts[1]});
+  // afterethbalance=await wethtoken.balanceOf(accounts[1]);
+  // console.log("BALANCE:",afterethbalance.toString())
+  // //subscribe to spp
+  // let amttosubscribe=new BN(String(1));
+  // let period=new BN(String(3600));
+  // let oldSppID = await sip.sppID.call()
+  // let tx1 = await sip.subscribeToSppOpti(amttosubscribe,period,icoadd,usdtadd,{from:accounts[1]});
+  // // console.log(tx1);
+  // let newSppID = await sip.sppID.call()
+  // let bnOne = new BN("1")
+  //   // console.log((oldSppID.add(bnOne)).toString(), newSppID.toString());
+  // assert.ok((oldSppID.add(bnOne)).toString(), newSppID.toString(), "SIP ID Error")
   
-  let sppSubList = await sip.getlistOfSppSubscriptions(accounts[1])
-  // console.log(sppSubList);
-  let sppIDFromMap = sppSubList[sppSubList.length-1]
-  assert.ok(newSppID.toString(), sppIDFromMap.toString())
-  console.log(sppIDFromMap.toString());
-  })
+  // let sppSubList = await sip.getlistOfSppSubscriptions(accounts[1])
+  // // console.log(sppSubList);
+  // let sppIDFromMap = sppSubList[sppSubList.length-1]
+  // assert.ok(newSppID.toString(), sppIDFromMap.toString())
+  // console.log(sppIDFromMap.toString());
+  // })
 
-  it("should be able to charge SIP -  single user", async() => {
-    let sppIDs = await sip.sppID.call()
-    const pairMap = {
+  // it("should be able to charge SIP -  single user", async() => {
+  //   let sppIDs = await sip.sppID.call()
+  //   const pairMap = {
 
-    }
-    for(let i=1;i<=sppIDs; i+=1) {
-      let data = await sip.fetchPairAndDirection(i)
-      console.log(data);
-      if(pairMap[data.pair] === undefined){
-        pairMap[data.pair] = {
-          0: [],
-          1: []
-        }
-      }
-      pairMap[data.pair][(data.direction === true) ? "1" : "0"].push(i)
-    }
+  //   }
+  //   for(let i=1;i<=sppIDs; i+=1) {
+  //     let data = await sip.fetchPairAndDirection(i)
+  //     console.log(data);
+  //     if(pairMap[data.pair] === undefined){
+  //       pairMap[data.pair] = {
+  //         0: [],
+  //         1: []
+  //       }
+  //     }
+  //     pairMap[data.pair][(data.direction === true) ? "1" : "0"].push(i)
+  //   }
 
-    console.log(pairMap);
+  //   console.log(pairMap);
 
-    const contractWalletBalUsdtOld = await sip.tokens.call(usdtadd, accounts[1])
-    const sppStats = await sip.sppSubscriptionStats.call(sppIDs)
-    const deductAmt = sppStats.value
+  //   const contractWalletBalUsdtOld = await sip.tokens.call(usdtadd, accounts[1])
+  //   const sppStats = await sip.sppSubscriptionStats.call(sppIDs)
+  //   const deductAmt = sppStats.value
 
-    for(let pair of Object.keys(pairMap)){
-      // Call for true direction
-      if(pairMap[pair]["1"].length !== 0){
-        console.log(pair, true);
-        await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["1"]), true)
-      }
+  //   for(let pair of Object.keys(pairMap)){
+  //     // Call for true direction
+  //     if(pairMap[pair]["1"].length !== 0){
+  //       console.log(pair, true);
+  //       await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["1"]), true)
+  //     }
 
-      // Call for false direction
-      if (pairMap[pair]["0"].length !== 0) {
-        console.log(pair, false);
-        await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["0"]), false)
-      }
-    }
-
-    const contractWalletBalUsdtNew = await sip.tokens.call(usdtadd, accounts[1])
-    console.log({
-      contractWalletBalUsdtOld: contractWalletBalUsdtOld.toString(),
-      contractWalletBalUsdtNew: contractWalletBalUsdtNew.toString(),
-      deductAmt: deductAmt.toString()
-    });
-    assert.ok((contractWalletBalUsdtOld.sub(deductAmt)).toString() , contractWalletBalUsdtNew.toString())
-
-
-  })
-
-  it("should charge fees in proportion", async () => {
-  //deposit tokens through account 2 and 3
-  await sip.depositToken(wethadd,new BN(String(10*wethFactor)),{from:accounts[2]})
-  await sip.depositToken(usdtadd,new BN(String(1000*usdtFactor)),{from:accounts[2]})
-  await sip.depositToken(wethadd,new BN(String(10*wethFactor)),{from:accounts[3]})
-  await sip.depositToken(usdtadd,new BN(String(1000*usdtFactor)),{from:accounts[3]})
-  let before_weth_account2=await sip.tokens(wethadd,accounts[2]);
-  let before_weth_account3=await sip.tokens(wethadd,accounts[3]);
-  console.log({
-    "ACCOUNT 2":before_weth_account2.toString(),
-    "ACCOUNT 3":before_weth_account3.toString()
-  })
-  await sip.subscribeToSpp(new BN(String(1*usdtFactor)),3600,icoadd,usdtadd,{from:accounts[2]});
-  await sip.subscribeToSpp(new BN(String(100*usdtFactor)),3600,icoadd,usdtadd,{from:accounts[3]});
-  //charge for sips.
-  
-  let sppIDs = await sip.sppID.call()
-    const pairMap = {
-
-    }
-    for(let i=1;i<=sppIDs; i+=1) {
-      let data = await sip.fetchPairAndDirection(i)
-      console.log(data);
-      if(pairMap[data.pair] === undefined){
-        pairMap[data.pair] = {
-          0: [],
-          1: []
-        }
-      }
-      pairMap[data.pair][(data.direction === true) ? "1" : "0"].push(i)
-    }
-
-    console.log(pairMap);
-
-    for(let pair of Object.keys(pairMap)){
-      // Call for true direction
-      if(pairMap[pair]["1"].length !== 0){
-        console.log(pair, true);
-        await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["1"]), true)
-      }
-
-      // Call for false direction
-      if (pairMap[pair]["0"].length !== 0) {
-        console.log(pair, false);
-        await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["0"]), false)
-      }
-    }
-    
-    let after_weth_account2=await sip.tokens(wethadd,accounts[2]);
-    let after_weth_account3=await sip.tokens(wethadd,accounts[3]);
-    console.log({
-      "ACCOUNT 2 WETH BALANCE":(before_weth_account2.sub(after_weth_account2)).toString(),
-      "ACCOUNT 3 WETH BALANCE":before_weth_account3.sub(after_weth_account3).toString()
-    })
-    console.log({
-      "ACCOUNT 2":after_weth_account2.toString(),
-      "ACCOUNT 3":after_weth_account3.toString()
-    })
-    let after_usdt_account2=await sip.tokens(usdtadd,accounts[2]);
-    let after_usdt_account3=await sip.tokens(usdtadd,accounts[3]);
-    console.log({
-      "ACCOUNT 2":after_usdt_account2.toString(),
-      "ACCOUNT 3":after_usdt_account3.toString()
-    })
-
-
-  })
-
-
-
-
-  // it("should be able to charge 150 SIPs with some random ones closed", async () => {
-
-  //   // Start 150 SIPs
-  //   for(let i=1;i<=9;i+=1){ // for accounts
-  //     // WETH for fees
-  //     await sip.depositToken(wethadd, new BN("8").mul(new BN(String(wethFactor))), { from: accounts[i] });
-
-  //     for(let j=1;j<=15;j+=1){
-  //       let sipAmt = new BN(j.toString());
-  //       // Start SIP
-  //       await sip.subscribeToSppOpti(sipAmt, "3600", icoadd, usdtadd, { from: accounts[i] });
-
+  //     // Call for false direction
+  //     if (pairMap[pair]["0"].length !== 0) {
+  //       console.log(pair, false);
+  //       await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["0"]), false)
   //     }
   //   }
 
+  //   const contractWalletBalUsdtNew = await sip.tokens.call(usdtadd, accounts[1])
+  //   console.log({
+  //     contractWalletBalUsdtOld: contractWalletBalUsdtOld.toString(),
+  //     contractWalletBalUsdtNew: contractWalletBalUsdtNew.toString(),
+  //     deductAmt: deductAmt.toString()
+  //   });
+  //   assert.ok((contractWalletBalUsdtOld.sub(deductAmt)).toString() , contractWalletBalUsdtNew.toString())
+
+
   // })
+
+  // it("should charge fees in proportion", async () => {
+  // //deposit tokens through account 2 and 3
+  // await sip.depositToken(wethadd,new BN(String(10*wethFactor)),{from:accounts[2]})
+  // await sip.depositToken(usdtadd,new BN(String(1000*usdtFactor)),{from:accounts[2]})
+  // await sip.depositToken(wethadd,new BN(String(10*wethFactor)),{from:accounts[3]})
+  // await sip.depositToken(usdtadd,new BN(String(1000*usdtFactor)),{from:accounts[3]})
+  // let before_weth_account2=await sip.tokens(wethadd,accounts[2]);
+  // let before_weth_account3=await sip.tokens(wethadd,accounts[3]);
+  // console.log({
+  //   "ACCOUNT 2":before_weth_account2.toString(),
+  //   "ACCOUNT 3":before_weth_account3.toString()
+  // })
+  // await sip.subscribeToSpp(new BN(String(1*usdtFactor)),3600,icoadd,usdtadd,{from:accounts[2]});
+  // await sip.subscribeToSpp(new BN(String(100*usdtFactor)),3600,icoadd,usdtadd,{from:accounts[3]});
+  // //charge for sips.
+  
+  // let sppIDs = await sip.sppID.call()
+  //   const pairMap = {
+
+  //   }
+  //   for(let i=1;i<=sppIDs; i+=1) {
+  //     let data = await sip.fetchPairAndDirection(i)
+  //     // console.log(data);
+  //     if(pairMap[data.pair] === undefined){
+  //       pairMap[data.pair] = {
+  //         0: [],
+  //         1: []
+  //       }
+  //     }
+  //     pairMap[data.pair][(data.direction === true) ? "1" : "0"].push(i)
+  //   }
+
+  //   // console.log(pairMap);
+
+  //   for(let pair of Object.keys(pairMap)){
+  //     // Call for true direction
+  //     if(pairMap[pair]["1"].length !== 0){
+  //       // console.log(pair, true);
+  //       await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["1"]), true)
+  //     }
+
+  //     // Call for false direction
+  //     if (pairMap[pair]["0"].length !== 0) {
+  //       // console.log(pair, false);
+  //       await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["0"]), false)
+  //     }
+  //   }
+    
+  //   let after_weth_account2=await sip.tokens(wethadd,accounts[2]);
+  //   let after_weth_account3=await sip.tokens(wethadd,accounts[3]);
+  //   // console.log({
+  //   //   "ACCOUNT 2 WETH BALANCE":(before_weth_account2.sub(after_weth_account2)).toString(),
+  //   //   "ACCOUNT 3 WETH BALANCE":before_weth_account3.sub(after_weth_account3).toString()
+  //   // })
+  //   let feeAcc2 = before_weth_account2.sub(after_weth_account2)
+  //   let feeAcc3 = before_weth_account3.sub(after_weth_account3)
+  //   let ratio = feeAcc3.mul(new BN("10000")).div(feeAcc2)
+  //   // console.log({
+  //   //   ratio: ratio.toString(),
+  //   //   lt: ratio.lt(new BN("1010000")).toString(),
+  //   //   grt: ratio.gt(new BN("990000")).toString(),
+  //   // });
+  //   assert.ok(ratio.lt(new BN("1010000")), "ratio > 101")
+  //   assert.ok(ratio.gt(new BN("990000")), "ratio < 99")
+    
+  //   // console.log({
+  //   //   "ACCOUNT 2":after_weth_account2.toString(),
+  //   //   "ACCOUNT 3":after_weth_account3.toString()
+  //   // })
+  //   let after_usdt_account2=await sip.tokens(usdtadd,accounts[2]);
+  //   let after_usdt_account3=await sip.tokens(usdtadd,accounts[3]);
+  //   // console.log({
+  //   //   "ACCOUNT 2":after_usdt_account2.toString(),
+  //   //   "ACCOUNT 3":after_usdt_account3.toString()
+  //   // })
+
+
+  // })
+
+
+
+
+  it("should be able to charge 150 SIPs with some random ones closed", async () => {
+    let oldSppID = await sip.sppID.call()
+    oldSppID = oldSppID.toNumber()
+
+    let newSppsMap = {}
+
+    let deposits = []
+    for (let i = 1; i <= 9; i += 1) {
+      // WETH for fees
+      deposits.push(sip.depositToken(wethadd, new BN("8").mul(new BN(String(wethFactor))), { from: accounts[i] }))
+      // WETH for fees
+      deposits.push(sip.depositToken(usdtadd, new BN(String(1000 * usdtFactor)), { from: accounts[i] }))
+    }
+    await Promise.all(deposits)
+
+    // Start 150 SIPs
+    for(let i=1;i<=9;i+=1){ // for accounts
+      
+
+      for(let j=1;j<=5;j+=1){
+        let sipAmt = new BN(j.toString());
+        // Start SIP
+        await sip.subscribeToSppOpti(sipAmt, "3600", icoadd, usdtadd, { from: accounts[i] });
+        let curSppID = await sip.sppID.call()
+        newSppsMap[curSppID.toNumber()] = accounts[i]
+      }
+    }
+
+    let newSppID = await sip.sppID.call()
+    newSppID = newSppID.toNumber()
+
+    for(let i=0;i<10;i+=1) {
+      let rand = Math.floor(Math.random() * (newSppID - oldSppID + 1) + oldSppID);
+      let account = newSppsMap[rand]
+      if(account === undefined) throw {err: "rand errors"}
+      await sip.closeSpp(rand, {from: account})
+      console.log("Closed SPP:", rand);
+    }
+
+  })
 
 });
