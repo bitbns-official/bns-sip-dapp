@@ -531,13 +531,13 @@ contract("SIPDapp test cases", function() {
         randMapID:randSppMap[sipID[i]]
       })
       if(randSppMap[sipID[i]]!==undefined){
-        assert.equal(balBeforeWETH.toString(),balAfterWETH.toString(),"close spp balance unequal: id"+sipID[i])
-        assert.equal(balBeforeUSDT.toString(),balAfterUSDT.toString(),"close spp balance unequal: id"+sipID[i])
-        assert.equal(balBeforeICO.toString(),balAfterICO.toString(),"close spp balance unequal: id"+sipID[i])
+        assert.equal(balBeforeWETH[i].toString(),balAfterWETH[i].toString(),"close spp balance unequal: id"+sipID[i])
+        assert.equal(balBeforeUSDT[i].toString(),balAfterUSDT[i].toString(),"close spp balance unequal: id"+sipID[i])
+        assert.equal(balBeforeICO[i].toString(),balAfterICO[i].toString(),"close spp balance unequal: id"+sipID[i])
       } else{
-        assert.notEqual(balBeforeWETH.toString(),balAfterWETH.toString(),"close spp balance equal: id"+sipID[i])
-        assert.notEqual(balBeforeUSDT.toString(),balAfterUSDT.toString(),"close spp balance equal: id"+sipID[i])
-        assert.notEqual(balBeforeICO.toString(),balAfterICO.toString(),"close spp balance equal: id"+sipID[i])
+        assert.notEqual(balBeforeWETH[i].toString(),balAfterWETH[i].toString(),"close spp balance equal: id"+sipID[i])
+        assert.notEqual(balBeforeUSDT[i].toString(),balAfterUSDT[i].toString(),"close spp balance equal: id"+sipID[i])
+        assert.notEqual(balBeforeICO[i].toString(),balAfterICO[i].toString(),"close spp balance equal: id"+sipID[i])
       }
     }
 
