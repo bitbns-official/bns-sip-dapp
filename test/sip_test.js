@@ -1,3 +1,4 @@
+require("util").inspect.defaultOptions.depth = null;
 const ico = artifacts.require("ICO");
 const usdt = artifacts.require("USDT");
 const SIP = artifacts.require("SIPDapp")
@@ -44,7 +45,7 @@ const advancetime = (time) => {
 }
 
 
-contract("UNISWAP Router test cases", function() {
+contract("SIPDapp test cases", function() {
 
   let accounts = null;
 
@@ -130,6 +131,44 @@ contract("UNISWAP Router test cases", function() {
 
 
   // });
+
+  const chargeSIP=async(oldSppID, newSppID)=>{
+    console.log({
+      oldSppID,
+      newSppID
+    })
+    const pairMap = {
+
+    }
+    for(let i=oldSppID+1;i<=newSppID; i+=1) {
+      let data = await sip.fetchPairAndDirection(i)
+      // console.log(data);
+      if(pairMap[data.pair] === undefined){
+        pairMap[data.pair] = {
+          0: [],
+          1: []
+        }
+      }
+      pairMap[data.pair][(data.direction === true) ? "1" : "0"].push(i)
+    }
+
+    // console.log(pairMap);
+
+    // const contractWalletBalUsdtOld = await sip.tokens.call(usdtadd, accounts[1])
+    // const sppStats = await sip.sppSubscriptionStats.call(sppIDs)
+    // const deductAmt = sppStats.value
+
+    for(let pair of Object.keys(pairMap)){
+      if(pairMap[pair]["1"].length !== 0){
+        // console.log(pair, true);
+        await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["1"]), true)
+      }
+      if (pairMap[pair]["0"].length !== 0) {
+        // console.log(pair, false);
+        await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["0"]), false)
+      }
+    }
+  }
 
   it("should be able to create pair", async function() {
 
@@ -408,6 +447,7 @@ contract("UNISWAP Router test cases", function() {
     oldSppID = oldSppID.toNumber()
 
     let newSppsMap = {}
+    let randSppMap={}
 
     let deposits = []
     for (let i = 1; i <= 9; i += 1) {
@@ -435,11 +475,70 @@ contract("UNISWAP Router test cases", function() {
     newSppID = newSppID.toNumber()
 
     for(let i=0;i<10;i+=1) {
-      let rand = Math.floor(Math.random() * (newSppID - oldSppID + 1) + oldSppID);
+      let rand = Math.floor(Math.random() * (newSppID - oldSppID - 5) + oldSppID);
       let account = newSppsMap[rand]
+      if(randSppMap[rand]===undefined){
+        randSppMap[rand]=true
+      }
       if(account === undefined) throw {err: "rand errors"}
       await sip.closeSpp(rand, {from: account})
       console.log("Closed SPP:", rand);
+    }
+
+    balBeforeWETH=[]
+    balBeforeUSDT=[]
+    balBeforeICO=[]
+    
+    sipID=[]
+
+    balAfterWETH=[]
+    balAfterUSDT=[]
+    balAfterICO=[]
+
+    for(let i=oldSppID+1; i<=newSppID;i++){
+      console.log(i)
+      balBeforeWETH.push(sip.tokens.call(wethadd, newSppsMap[i]))
+      balBeforeUSDT.push(sip.tokens.call(usdtadd, newSppsMap[i]));
+      balBeforeICO.push(sip.tokens.call(icoadd, newSppsMap[i]));
+      sipID.push(i)
+    }
+    balBeforeWETH=await Promise.all([...balBeforeWETH])
+    balBeforeUSDT=await Promise.all([...balBeforeUSDT])
+    balBeforeICO=await Promise.all([...balBeforeICO])
+
+    await chargeSIP(oldSppID, newSppID)
+
+    for(let i=oldSppID+1; i<=newSppID;i++){
+      console.log(i)
+      balAfterWETH.push(sip.tokens.call(wethadd, newSppsMap[i]))
+      balAfterUSDT.push(sip.tokens.call(usdtadd, newSppsMap[i]));
+      balAfterICO.push(sip.tokens.call(icoadd, newSppsMap[i]));
+    }
+
+    balAfterWETH=await Promise.all([...balAfterWETH])
+    balAfterUSDT=await Promise.all([...balAfterUSDT])
+    balAfterICO=await Promise.all([...balAfterICO])
+
+    for(let i=0;i<balBeforeWETH.length;i++){
+      console.log({
+        sipID:sipID[i],
+        balBeforeWETH:balBeforeWETH[i].toString(),
+        balAfterWETH:balAfterWETH[i].toString(),
+        balBeforeUSDT:balBeforeUSDT[i].toString(),
+        balAfterUSDT:balAfterUSDT[i].toString(),
+        balBeforeICO:balBeforeICO[i].toString(),
+        balAfterICO:balAfterICO[i].toString(),
+        randMapID:randSppMap[sipID[i]]
+      })
+      if(randSppMap[sipID[i]]!==undefined){
+        assert.equal(balBeforeWETH.toString(),balAfterWETH.toString(),"close spp balance unequal: id"+sipID[i])
+        assert.equal(balBeforeUSDT.toString(),balAfterUSDT.toString(),"close spp balance unequal: id"+sipID[i])
+        assert.equal(balBeforeICO.toString(),balAfterICO.toString(),"close spp balance unequal: id"+sipID[i])
+      } else{
+        assert.notEqual(balBeforeWETH.toString(),balAfterWETH.toString(),"close spp balance equal: id"+sipID[i])
+        assert.notEqual(balBeforeUSDT.toString(),balAfterUSDT.toString(),"close spp balance equal: id"+sipID[i])
+        assert.notEqual(balBeforeICO.toString(),balAfterICO.toString(),"close spp balance equal: id"+sipID[i])
+      }
     }
 
   })
