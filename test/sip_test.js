@@ -328,6 +328,14 @@ contract("UNISWAP Router test cases", function() {
   await sip.depositToken(usdtadd,new BN(String(1000*usdtFactor)),{from:accounts[3]})
   let before_weth_account2=await sip.tokens(wethadd,accounts[2]);
   let before_weth_account3=await sip.tokens(wethadd,accounts[3]);
+  let before_usdt_account2=await sip.tokens(usdtadd,accounts[2]);
+  let before_usdt_account3=await sip.tokens(usdtadd,accounts[3]);
+  
+
+  console.log({
+    "ACCOUNT 2 USDT":before_usdt_account2.toString(),
+    "ACCOUNT 3 USDT":before_usdt_account3.toString()
+  })
   console.log({
     "ACCOUNT 2":before_weth_account2.toString(),
     "ACCOUNT 3":before_weth_account3.toString()
@@ -384,7 +392,7 @@ contract("UNISWAP Router test cases", function() {
       "ACCOUNT 2":after_usdt_account2.toString(),
       "ACCOUNT 3":after_usdt_account3.toString()
     })
-
+    
 
   })
 
