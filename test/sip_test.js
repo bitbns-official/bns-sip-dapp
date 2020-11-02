@@ -321,29 +321,69 @@ contract("UNISWAP Router test cases", function() {
   })
 
   it("should charge fees in proportion", async () => {
-  
-  let beforeethbalance=await wethtoken.balanceOf(accounts[1]);
-  //transfering weth to account1
-  let amteth=new BN(String(100000000000000000000));
-  
-  let tx=await wethtoken.transfer(accounts[1],amteth,{from:accounts[0]})
-  
-  let afterethbalance=await wethtoken.balanceOf(accounts[1]);
-  
+  //deposit tokens through account 2 and 3
+  await sip.depositToken(wethadd,new BN(String(10*wethFactor)),{from:accounts[2]})
+  await sip.depositToken(usdtadd,new BN(String(1000*usdtFactor)),{from:accounts[2]})
+  await sip.depositToken(wethadd,new BN(String(10*wethFactor)),{from:accounts[3]})
+  await sip.depositToken(usdtadd,new BN(String(1000*usdtFactor)),{from:accounts[3]})
+  let before_weth_account2=await sip.tokens(wethadd,accounts[2]);
+  let before_weth_account3=await sip.tokens(wethadd,accounts[3]);
   console.log({
-    "BEFORE":beforeethbalance.toString(),
-    "AFTER":afterethbalance.toString()
+    "ACCOUNT 2":before_weth_account2.toString(),
+    "ACCOUNT 3":before_weth_account3.toString()
   })
-  //deposit token
-  await sip.depositToken(wethadd,afterethbalance,{from:accounts[1]});
-  afterethbalance=await wethtoken.balanceOf(accounts[1]);
-  console.log("BALANCE:",afterethbalance.toString())
-  //subscribe to spp
-  let amttosubscribe=new BN(String(1));
-  let period=new BN(String(3600));
-  let oldSppID = await sip.sppID.call()
-  let tx1 = await sip.subscribeToSppOpti(amttosubscribe,period,icoadd,usdtadd,{from:accounts[1]});
+  await sip.subscribeToSpp(new BN(String(1*usdtFactor)),3600,icoadd,usdtadd,{from:accounts[2]});
+  await sip.subscribeToSpp(new BN(String(100*usdtFactor)),3600,icoadd,usdtadd,{from:accounts[3]});
+  //charge for sips.
+  
+  let sppIDs = await sip.sppID.call()
+    const pairMap = {
 
+    }
+    for(let i=1;i<=sppIDs; i+=1) {
+      let data = await sip.fetchPairAndDirection(i)
+      console.log(data);
+      if(pairMap[data.pair] === undefined){
+        pairMap[data.pair] = {
+          0: [],
+          1: []
+        }
+      }
+      pairMap[data.pair][(data.direction === true) ? "1" : "0"].push(i)
+    }
+
+    console.log(pairMap);
+
+    for(let pair of Object.keys(pairMap)){
+      // Call for true direction
+      if(pairMap[pair]["1"].length !== 0){
+        console.log(pair, true);
+        await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["1"]), true)
+      }
+
+      // Call for false direction
+      if (pairMap[pair]["0"].length !== 0) {
+        console.log(pair, false);
+        await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["0"]), false)
+      }
+    }
+    
+    let after_weth_account2=await sip.tokens(wethadd,accounts[2]);
+    let after_weth_account3=await sip.tokens(wethadd,accounts[3]);
+    console.log({
+      "ACCOUNT 2 WETH BALANCE":(before_weth_account2.sub(after_weth_account2)).toString(),
+      "ACCOUNT 3 WETH BALANCE":before_weth_account3.sub(after_weth_account3).toString()
+    })
+    console.log({
+      "ACCOUNT 2":after_weth_account2.toString(),
+      "ACCOUNT 3":after_weth_account3.toString()
+    })
+    let after_usdt_account2=await sip.tokens(usdtadd,accounts[2]);
+    let after_usdt_account3=await sip.tokens(usdtadd,accounts[3]);
+    console.log({
+      "ACCOUNT 2":after_usdt_account2.toString(),
+      "ACCOUNT 3":after_usdt_account3.toString()
+    })
 
 
   })
