@@ -17,16 +17,16 @@ console.log((new BN("8").mul(new BN(String(1e18)))).toString());
 
 const provider = new Web3.providers.HttpProvider("http://127.0.0.1:8545");
 
-let uniswapABI = fs.readFileSync('../abi/uniswapRouter.abi').toString();
+let uniswapABI = fs.readFileSync('./abi/uniswapRouter.abi').toString();
 uniswapABI = JSON.parse(uniswapABI);
 
-let factoryABI = fs.readFileSync('../abi/factory.abi').toString();
+let factoryABI = fs.readFileSync('./abi/factory.abi').toString();
 factoryABI = JSON.parse(factoryABI);
 
-let pairABI = fs.readFileSync('../abi/pair.abi').toString();
+let pairABI = fs.readFileSync('./abi/pair.abi').toString();
 pairABI = JSON.parse(pairABI);
 
-let erc20ABI = fs.readFileSync('../abi/erc20.abi').toString();
+let erc20ABI = fs.readFileSync('./abi/erc20.abi').toString();
 erc20ABI = JSON.parse(erc20ABI);
 
 const advancetime = (time) => {
@@ -580,6 +580,7 @@ contract("SIPDapp test cases", function() {
     const contractWalletBalUsdtOld = await sip.tokens.call(usdtadd, accounts[1])
     const sppStats = await sip.sppSubscriptionStats.call(sppIDs)
     const deductAmt = sppStats.value
+
     await sip.chargeSppByID(sppID);
       
     // for(let pair of Object.keys(pairMap)){
