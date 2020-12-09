@@ -479,8 +479,6 @@ contract("SIPDapp test cases", function() {
       deductAmt: deductAmt.toString()
     });
     assert.ok((contractWalletBalUsdtOld.sub(deductAmt)).toString() , contractWalletBalUsdtNew.toString())
-
-
   })
 
   it("should charge fees in proportion", async () => {
@@ -558,8 +556,53 @@ contract("SIPDapp test cases", function() {
     //   "ACCOUNT 2":after_usdt_account2.toString(),
     //   "ACCOUNT 3":after_usdt_account3.toString()
     // })
+  })
 
+  it("should be able to charge SIP using ChargewithSPP of single user", async() => {
+    let sppID = await sip.sppID.call()
+    const pairMap = {
 
+    }
+    // for(let i=1;i<=sppIDs; i+=1) {
+      let data = await sip.fetchPairAndDirection(sppID)
+      console.log(data);
+      if(pairMap[data.pair] === undefined){
+        pairMap[data.pair] = {
+          0: [],
+          1: []
+        }
+      }
+      pairMap[data.pair][(data.direction === true) ? "1" : "0"].push(i)
+    //}
+
+    console.log(pairMap);
+
+    const contractWalletBalUsdtOld = await sip.tokens.call(usdtadd, accounts[1])
+    const sppStats = await sip.sppSubscriptionStats.call(sppIDs)
+    const deductAmt = sppStats.value
+    await sip.chargeSppByID(sppID);
+      
+    // for(let pair of Object.keys(pairMap)){
+    //   // Call for true direction
+    //   if(pairMap[pair]["1"].length !== 0){
+    //     console.log(pair, true);
+    //     await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["1"]), true)
+    //   }
+
+    //   // Call for false direction
+    //   if (pairMap[pair]["0"].length !== 0) {
+    //     console.log(pair, false);
+    //     await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["0"]), false)
+    //   }
+    // }
+
+    const contractWalletBalUsdtNew = await sip.tokens.call(usdtadd, accounts[1])
+    console.log({
+      contractWalletBalUsdtOld: contractWalletBalUsdtOld.toString(),
+      contractWalletBalUsdtNew: contractWalletBalUsdtNew.toString(),
+      deductAmt: deductAmt.toString()
+    });
+    assert.ok((contractWalletBalUsdtOld.sub(deductAmt)).toString() , contractWalletBalUsdtNew.toString())
   })
 
 
