@@ -248,65 +248,7 @@ contract SIP {
             sppSubList[customerAddress].arr.push(sppID);
             emit SubscribeToSpp(sppID,customerAddress,value,period,tokenGet,tokenGive);
             return sppID;
-    }
-
-    function subscribeToSppOpti(uint256 value, uint256 period, address tokenGet, address tokenGive) external _ifNotLocked returns (uint256 sID) {
-        address customerAddress = msg.sender;
-        require(period >= minPeriod, "MIN_FREQUENCY");
-        require(period.mod(3600) == 0, "INTEGRAL_MULTIPLE_OF_HOUR_NEEDED");
-        require(tokenBalanceOf(tokenGive,customerAddress) >= value, "INSUFFICENT_BALANCE");
-
-        
-            _deductFee(customerAddress, WETH, initFee);
-    
-            sppID += 1;
-            
-            require(tokenGet != tokenGive, 'IDENTICAL_ADDRESSES');
-            (address token0, address token1) = tokenGet < tokenGive ? (tokenGet, tokenGive) : (tokenGive, tokenGet);
-            require(token0 != address(0), 'ZERO_ADDRESS');
-            address pair = IUniswapV2Factory(factory).getPair(tokenGet, tokenGive); //reverse this and try
-            
-            require(pair != address(0), 'NO_SUCH_PAIR');
-            
-            if(token0==tokenGet){
-                if(map1[pair].exists== false){
-                    map1[pair].token.push(tokenGive);
-                    map1[pair].token.push(tokenGet);
-                    map1[pair].exists = true;
-                    map1[pair].position = 0;
-                    _storePairDetails(token0, token1, pair);
-                }
-                map1[pair].sppList.push(sppID);
-            }
-            else{
-                if(map2[pair].exists== false){
-                    map2[pair].token.push(tokenGive);
-                    map2[pair].token.push(tokenGet);
-                    map2[pair].exists = true;
-                    map2[pair].position = 0;
-                    _storePairDetails(token0, token1, pair);
-                }
-                map2[pair].sppList.push(sppID);
-            }
-            
-            sppSubscriptionStats[sppID] = sppSubscribers({
-                exists: true,
-                customerAddress: customerAddress,
-                value: value,
-                period: period,
-                lastPaidAt: (block.timestamp).sub(period)
-            });
-            tokenStats[sppID] = currentTokenStats({
-                TokenToGet: tokenGet,
-                TokenToGive: tokenGive,
-                amountGotten: 0,
-                amountGiven: 0
-            });
-            sppSubList[customerAddress].arr.push(sppID);
-            emit SubscribeToSpp(sppID,customerAddress,value,period,tokenGet,tokenGive);
-            return sppID;
-    }
-    
+    } 
     
     function chargeSppIndex(address pair, uint256 start, uint256 end, bool _upwards) external _ownerOnly _ifNotLocked discountCHI {
         

@@ -45,6 +45,27 @@ const advancetime = (time) => {
   })
 }
 
+const advanceBlock = () => {
+  return new Promise((resolve, reject) => {
+    web3.currentProvider.send({
+      jsonrpc: '2.0',
+      method: 'evm_mine',
+      id: new Date().getTime()
+    }, async (err, result) => {
+      if (err) { return reject(err) }
+      // const newBlockHash =await web3.eth.getBlock('latest').hash
+      return resolve()
+    })
+  })
+}
+
+const advanceBlocks = async (num) => {
+  let resp = []
+  for(let i=0;i<num;i++){
+    resp.push(advanceBlock())
+  }
+  await Promise.all(resp)
+}
 
 contract("SIPDapp test cases", function() {
 
@@ -421,7 +442,7 @@ contract("SIPDapp test cases", function() {
   let amttosubscribe=new BN(String(1));
   let period=new BN(String(3600));
   let oldSppID = await sip.sppID.call()
-  let tx1 = await sip.subscribeToSppOpti(amttosubscribe,period,icoadd,usdtadd,{from:accounts[1]});
+  let tx1 = await sip.subscribeToSpp(amttosubscribe,period,icoadd,usdtadd,{from:accounts[1]});
   // console.log(tx1);
   let newSppID = await sip.sppID.call()
   let bnOne = new BN("1")
@@ -559,56 +580,67 @@ contract("SIPDapp test cases", function() {
   })
 
   it("should be able to charge SIP using ChargewithSPP of single user", async() => {
+    
+    await sip.subscribeToSpp(new BN(String(100*usdtFactor)),3600,icoadd,usdtadd,{from:accounts[3]});
+    
     let sppID = await sip.sppID.call()
     const pairMap = {
 
     }
-    // for(let i=1;i<=sppIDs; i+=1) {
-      let data = await sip.fetchPairAndDirection(sppID)
-      console.log(data);
-      if(pairMap[data.pair] === undefined){
-        pairMap[data.pair] = {
-          0: [],
-          1: []
-        }
+
+    let data = await sip.fetchPairAndDirection(sppID)
+    console.log(data);
+    if(pairMap[data.pair] === undefined){
+      pairMap[data.pair] = {
+        0: [],
+        1: []
       }
-      pairMap[data.pair][(data.direction === true) ? "1" : "0"].push(i)
-    //}
+    }
+    pairMap[data.pair][(data.direction === true) ? "1" : "0"].push(sppID)
 
     console.log(pairMap);
 
-    const contractWalletBalUsdtOld = await sip.tokens.call(usdtadd, accounts[1])
-    const sppStats = await sip.sppSubscriptionStats.call(sppIDs)
+    const contractWalletBalUsdtOld = await sip.tokens.call(usdtadd, accounts[3])
+    const contractWalletBalIcoOld = await sip.tokens.call(icoadd, accounts[3])
+
+    const sppStats = await sip.sppSubscriptionStats.call(sppID)
     const deductAmt = sppStats.value
+    const creditAmt = sppStats.value
+
+    //advance by 1 hour
+    // await advancetime(3600000);
 
     await sip.chargeSppByID(sppID);
-      
-    // for(let pair of Object.keys(pairMap)){
-    //   // Call for true direction
-    //   if(pairMap[pair]["1"].length !== 0){
-    //     console.log(pair, true);
-    //     await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["1"]), true)
-    //   }
 
-    //   // Call for false direction
-    //   if (pairMap[pair]["0"].length !== 0) {
-    //     console.log(pair, false);
-    //     await sip.chargeWithSPPIndexes(pair, Object.keys(pairMap[pair]["0"]), false)
-    //   }
-    // }
+    const contractWalletBalUsdtNew = await sip.tokens.call(usdtadd, accounts[3])
 
-    const contractWalletBalUsdtNew = await sip.tokens.call(usdtadd, accounts[1])
     console.log({
       contractWalletBalUsdtOld: contractWalletBalUsdtOld.toString(),
       contractWalletBalUsdtNew: contractWalletBalUsdtNew.toString(),
       deductAmt: deductAmt.toString()
     });
-    assert.ok((contractWalletBalUsdtOld.sub(deductAmt)).toString() , contractWalletBalUsdtNew.toString())
+
+    const contractWalletBalIcoNew = await sip.tokens.call(icoadd, accounts[3])
+    console.log({
+      contractWalletBalIcoOld: contractWalletBalIcoOld.toString(),
+      contractWalletBalIcoNew: contractWalletBalIcoNew.toString(),
+      creditAmt: creditAmt.toString()
+    });
+
+    assert.ok((contractWalletBalIcoOld.add(creditAmt)).toString() , contractWalletBalIcoNew.toString())
   })
 
+  it ("-ve test case for chargeSppByID", async() => {
+    let sppID = await sip.sppID.call()
+    await truffleAssert.reverts( sip.chargeSppByID(sppID), "CTE");
 
+    await sip.subscribeToSpp(new BN(String(0*usdtFactor)),3600,icoadd,usdtadd,{from:accounts[3]});
+    
+    sppID = await sip.sppID.call()
+    await truffleAssert.reverts( sip.chargeSppByID(sppID), "Nothing to charge");
 
+    await sip.closeSpp(sppID, {from:accounts[3]});
+    await truffleAssert.reverts( sip.chargeSppByID(sppID), "NVS");
 
-  
-
+  })
 });
